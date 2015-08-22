@@ -15,6 +15,7 @@ import javax.servlet.http.*;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.net.HttpURLConnection;
 
 @SuppressWarnings("serial")
@@ -22,6 +23,7 @@ public class SimpleProxy extends HttpServlet {
     static private String CAS_URL_PREFIX = "http://localhost:8080/cas";
     static private String TICKET_FILE_PREFIX = "/tmp/impersonate-";
     static private String IMPERSONATE_COOKIE = "CAS_TEST_IMPERSONATE";
+    static private String CAN_IMPERSONATE_URL = "https://bandeau-ent.univ-paris1.fr/canImpersonate.php?test";
     
     private Logger log;
     
@@ -94,8 +96,12 @@ public class SimpleProxy extends HttpServlet {
 	con.disconnect();
     }
 
-    private boolean allowImpersonate(String service, String user) {
-	return "prigaux".equals(user);
+    private boolean allowImpersonate(String service, String user) throws IOException {
+	URL url = url(CAN_IMPERSONATE_URL + "&uid=" + urlencode(user) + "&service=" + urlencode(service));
+	HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+	conn.connect();			
+	if (conn.getResponseCode() == 403) return false;
+	return true;
     }
 
     private String getTicketFromRedirect(HttpURLConnection con) {
@@ -213,6 +219,14 @@ public class SimpleProxy extends HttpServlet {
 	    if (cookie.getName().equals(name))
 		return cookie;
 	return null;
+    }
+
+    public static String urlencode(String s) {
+        try {
+            return URLEncoder.encode(s, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("urlencode failed on '" + s + "'");
+        }
     }
 
     private URL url(String urlString) {
