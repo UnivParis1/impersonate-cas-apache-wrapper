@@ -54,8 +54,10 @@ public class SimpleProxy extends HttpServlet {
 		    log.info("saving ticket=" + ticket + " to be impersonated to " + impersonate.getValue());
 		    outputFile(ticketFile(ticket), impersonate.getValue());
 		}
-	    }    		
-    	} else if (part.equals("/serviceValidate") || part.equals("/proxyValidate")) {
+	    } else if (con.getResponseCode() == 301) {
+		log.warning("weird redirect permanent response from cas server. It seems to happen on non https services?");
+	    }
+    	} else if (part.equals("/serviceValidate") || part.equals("/proxyValidate") || part.equals("/validate")) {
 	    String ticket = request.getParameter("ticket");
 	    String impersonate = ticket == null ? null : getContent(ticketFile(ticket));
 	    ticketFile(ticket).delete(); // consume it to ensure no dead-loop
@@ -64,12 +66,15 @@ public class SimpleProxy extends HttpServlet {
 	    //log.info("got ticket " + ticket);
 	    if (impersonate != null) {
 		body = body(con);
-		String user = getFirstMatch("<cas:user>(.*?)</cas:user>", body);
+		boolean casV1 = part.equals("/validate");
+		String regexp = casV1 ? "yes\n(.*)" : "<cas:user>(.*?)</cas:user>";
+		String user = getFirstMatch(regexp, body);
 		String service = request.getParameter("service");
 		//log.info("verifying impersonate " + user + " for service " + service + " for ticket " + ticket);
 		if (user != null && allowImpersonate(service, user)) {
 		    log.info("allowing impersonate " + impersonate + " instead of " + user + " for ticket " + ticket);
-		    body = body.replaceFirst("<cas:user>(.*?)</cas:user>", "<cas:user>" + impersonate + "</cas:user>");
+		    String bodyPart = casV1 ? "yes\n" + impersonate : "<cas:user>" + impersonate + "</cas:user>";
+		    body = body.replaceFirst(regexp, bodyPart);
 		}
 	    } else {
 		log.severe("ERROR serviceValidate but no impersonate. The apache RewriteCond must be wrong!");
