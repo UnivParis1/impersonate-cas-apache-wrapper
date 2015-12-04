@@ -126,6 +126,7 @@ public class SimpleProxy extends HttpServlet {
         }
         log.info("Fetching " + url);
 	HttpURLConnection con = (HttpURLConnection) url_.openConnection();           
+        con.setInstanceFollowRedirects(false);
 	con.setRequestMethod(request.getMethod());
 	copyHeaders(request, con);
         if (request.getMethod().equals("POST")) {
