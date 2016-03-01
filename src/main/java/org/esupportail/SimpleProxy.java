@@ -100,8 +100,7 @@ public class SimpleProxy extends HttpServlet {
 	URL url = url(CAN_IMPERSONATE_URL + "&uid=" + urlencode(user) + "&service=" + urlencode(service));
 	HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 	conn.connect();			
-	if (conn.getResponseCode() == 403) return false;
-	return true;
+	return conn.getResponseCode() == 200;
     }
 
     private String getTicketFromRedirect(HttpURLConnection con) {
