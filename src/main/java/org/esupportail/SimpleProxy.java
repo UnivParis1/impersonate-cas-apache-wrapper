@@ -3,8 +3,10 @@ package org.esupportail;
 import java.io.*;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,13 +69,15 @@ public class SimpleProxy extends HttpServlet {
 	    con = proxy(destUrl, request);
 	    //log.info("got ticket " + ticket);
 	    if (impersonate != null) {
+		Set<String> allowedAppIds = new HashSet<>();
+		impersonate = parse_impersonate(impersonate, allowedAppIds);
 		body = body(con);
 		boolean casV1 = part.equals("/validate");
 		String regexp = casV1 ? "yes\n(.*)" : "<cas:user>(.*?)</cas:user>";
 		String user = getFirstMatch(regexp, body);
 		String service = request.getParameter("service");
 		//log.info("verifying impersonate " + user + " for service " + service + " for ticket " + ticket);
-		if (user != null && allowImpersonate(service, user)) {
+		if (user != null && allowImpersonate(service, user, allowedAppIds)) {
 		    log.info("allowing impersonate " + impersonate + " instead of " + user + " for ticket " + ticket);
 		    String bodyPart = casV1 ? "yes\n" + impersonate : "<cas:user>" + impersonate + "</cas:user>";
 		    body = body.replaceFirst(regexp, bodyPart);
@@ -96,11 +100,28 @@ public class SimpleProxy extends HttpServlet {
 	con.disconnect();
     }
 
-    private boolean allowImpersonate(String service, String user) throws IOException {
+    private String parse_impersonate(String s, Set<String> allowedAppIds) {
+        String[] r = s.split(" ");
+        for (int i = 1; i < r.length; i++)
+           allowedAppIds.add(r[i]);
+        return r[0];
+    }
+
+    private boolean allowImpersonate(String service, String user, Set<String> allowedAppIds) throws IOException {
 	URL url = url(CAN_IMPERSONATE_URL + "?uid=" + urlencode(user) + "&service=" + urlencode(service));
 	HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 	conn.connect();			
-	return conn.getResponseCode() == 200;
+	if (conn.getResponseCode() != 200) return false;
+	if (allowedAppIds.isEmpty()) {
+	    // no restriction
+	    return true;
+	} else {
+	    // for now, dirty parsing of json. Expected response is ["xxx"]
+	    String appId = body(conn).replaceFirst("^\\[\"(.*)\"\\]$", "$1");
+	    boolean ok = allowedAppIds.contains(appId);
+	    if (!ok) log.info("impersonate would be allowed for user " + user + ", but impersonate asked only for application " + allowedAppIds + ", not for " + appId);
+	    return ok;
+	}
     }
 
     private String getTicketFromRedirect(HttpURLConnection con) {
