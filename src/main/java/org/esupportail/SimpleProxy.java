@@ -23,7 +23,7 @@ public class SimpleProxy extends HttpServlet {
     static private String CAS_URL_PREFIX = "http://localhost:8080/cas";
     static private String TICKET_FILE_PREFIX = "/tmp/impersonate-";
     static private String IMPERSONATE_COOKIE = "CAS_TEST_IMPERSONATE";
-    static private String CAN_IMPERSONATE_URL = "https://bandeau-ent.univ-paris1.fr/canImpersonate.php?test";
+    static private String CAN_IMPERSONATE_URL = "https://ent.univ.fr/EsupUserApps/canImpersonate";
     
     private Logger log;
     
@@ -97,7 +97,7 @@ public class SimpleProxy extends HttpServlet {
     }
 
     private boolean allowImpersonate(String service, String user) throws IOException {
-	URL url = url(CAN_IMPERSONATE_URL + "&uid=" + urlencode(user) + "&service=" + urlencode(service));
+	URL url = url(CAN_IMPERSONATE_URL + "?uid=" + urlencode(user) + "&service=" + urlencode(service));
 	HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 	conn.connect();			
 	return conn.getResponseCode() == 200;
