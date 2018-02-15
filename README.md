@@ -23,7 +23,7 @@ Installation
 - you need a web-service implementing ``canImpersonate``
   - known implementations: [EsupUserApps](https://github.com/EsupPortail/EsupUserApps)
 
-- add this at top of apache configuration:
+- add the following at top of apache configuration:
 
 ```apache
 RewriteEngine On
