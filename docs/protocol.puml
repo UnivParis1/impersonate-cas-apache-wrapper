@@ -1,0 +1,46 @@
+actor Alice
+participant app
+
+== no impersonate ==
+
+Alice->cas : /login?service=https://app
+cas->Alice : 302 https://app/?ticket=x
+Alice->app : ?ticket=x
+activate app
+app -> cas : serviceValidate?service=https://app&ticket=x
+activate cas
+cas -> app : ...<cas:user>alice</cas:user>...
+deactivate cas
+app o-> Alice : html for user 
+deactivate app
+
+== impersonate: Alice is allowed to impersonate for app ==
+
+Alice->cas : /login?service=https://app\ncookie: CAS_IMPERSONATE=bob
+cas->Alice : 302 https://app/?ticket=x
+Alice->app : ?ticket=x
+activate app
+app -> cas : serviceValidate?service=https://app&ticket=x
+activate cas
+cas -> esupUserApps : canImpersonate?uid=bob&service=https://app
+esupUserApps -> cas : ["app"]
+cas -> app : ...<cas:user>bob</cas:user>...
+deactivate cas
+app o-> Alice : html for user 
+deactivate app
+
+== impersonate: Alice is NOT allowed to impersonate for app2 ==
+
+Alice->cas : /login?service=https://app2\ncookie: CAS_IMPERSONATE=bob
+cas->Alice : 302 https://app2/?ticket=x
+Alice->app : ?ticket=x
+activate app
+app -> cas : serviceValidate?service=https://app2&ticket=x
+activate cas
+cas -> esupUserApps : canImpersonate?uid=bob&service=https://app2
+esupUserApps -> cas : 403
+cas -> app : ...<cas:user>alice</cas:user>...
+deactivate cas
+app o-> Alice : html for user 
+deactivate app
+
