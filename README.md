@@ -27,14 +27,12 @@ Installation
 
 ```apache
 RewriteEngine On
-RewriteCond %{REQUEST_URI} ^/cas/login
 RewriteCond %{HTTP_COOKIE} CAS_IMPERSONATE=
-RewriteRule .* http://localhost:8081/login [P]
+RewriteRule ^/cas/login http://localhost:8081/login [P]
 
-RewriteCond %{REQUEST_URI} ^/cas/serviceValidate$
 RewriteCond %{QUERY_STRING} ticket=([^&]+)
 RewriteCond /tmp/impersonate-%1 -f
-RewriteRule .* http://localhost:8081/serviceValidate [P]
+RewriteRule ^/cas/(serviceValidate|proxyValidate|validate)$ http://localhost:8081/$1 [P]
 ```
 
 - configure CAN_IMPERSONATE_URL in SimpleProxy.java
