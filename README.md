@@ -16,6 +16,7 @@ Installation:
 
 - add this at top of apache configuration:
 
+```apache
 RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/cas/login
 RewriteCond %{HTTP_COOKIE} CAS_IMPERSONATE=
@@ -25,16 +26,21 @@ RewriteCond %{REQUEST_URI} ^/cas/serviceValidate$
 RewriteCond %{QUERY_STRING} ticket=([^&]+)
 RewriteCond /tmp/impersonate-%1 -f
 RewriteRule .* http://localhost:8081/serviceValidate [P]
+```
 
 - run
 
+```sh
 ant jetty.run
+```
 
 - create an impersonate page which does something like:
 
+```html
 <script>
 function setCasCookie(uid) {
-   document.cookie = "CAS_IMPERSONATE=" + uid + ";domain=.univ-paris1.fr;path=/" + (uid ? '' : ";expires=Thu, 01 Jan 1970 00:00:01 GMT;");
+   document.cookie = "CAS_IMPERSONATE=" + uid + ";domain=.univ-ville.fr;path=/" + (uid ? '' : ";expires=Thu, 01 Jan 1970 00:00:01 GMT;");
 }
 </script>
 <form onsubmit="setCasCookie(this.elements.uid.value); return false;"><input name="uid"></form>
+```
